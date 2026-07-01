@@ -286,7 +286,40 @@ export const useEditorCollaboration = ({
     window.addEventListener("blur", onBlur);
     document.addEventListener("mouseenter", onMouseEnter);
     document.addEventListener("mouseleave", onMouseLeave);
+    // Dampen wheel panning so a mouse wheel feels less jittery. Plain wheel pans
+    // (at reduced speed); ctrl/cmd+wheel is left alone so zoom still works.
+    // ponytail: 0.4 multiplier; tune this one number if it's too slow/fast.
+    const WHEEL_DAMPEN = 0.4;
+    const container = editorContainerRef.current;
+    const handleWheel = (event: WheelEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (
+        target?.tagName?.toLowerCase() === "canvas" &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !(event as any)._isDamped
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        const damped = new WheelEvent("wheel", {
+          bubbles: true,
+          cancelable: true,
+          clientX: event.clientX,
+          clientY: event.clientY,
+          deltaX: event.deltaX * WHEEL_DAMPEN,
+          deltaY: event.deltaY * WHEEL_DAMPEN,
+          deltaMode: event.deltaMode,
+        });
+        (damped as any)._isDamped = true;
+        target.dispatchEvent(damped);
+      }
+    };
+    container?.addEventListener("wheel", handleWheel, {
+      capture: true,
+      passive: false,
+    });
     return () => {
+      container?.removeEventListener("wheel", handleWheel, { capture: true });
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("blur", onBlur);
       document.removeEventListener("mouseenter", onMouseEnter);
