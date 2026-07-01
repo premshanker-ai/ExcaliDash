@@ -54,7 +54,13 @@ export function GifOverlay({ excalidrawAPI }: { excalidrawAPI: any }) {
           container.appendChild(img);
           nodes.set(el.id, img);
         }
-        if (img.src !== file.dataURL) img.src = file.dataURL;
+        // Set src ONLY when the underlying file changes. Reassigning src every
+        // frame restarts the GIF, freezing it on frame 1. Key off fileId (stable
+        // per file) rather than comparing img.src, which the browser normalizes.
+        if (img.dataset.fileId !== el.fileId) {
+          img.src = file.dataURL;
+          img.dataset.fileId = el.fileId;
+        }
 
         const w = el.width * zoom;
         const h = el.height * zoom;
