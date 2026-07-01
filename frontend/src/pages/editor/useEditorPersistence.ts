@@ -5,6 +5,7 @@ import debounce from "lodash/debounce";
 import { toast } from "sonner";
 import * as api from "../../api";
 import { compressExcalidrawFiles } from "../../utils/imageCompression";
+import { substituteGifFiles } from "./gifStore";
 import {
   getFilesDelta,
   getPersistedAppState,
@@ -122,7 +123,9 @@ export const useEditorPersistence = ({
         });
         return;
       }
-      let persistableFiles = files ?? refs.latestFiles.current ?? {};
+      // Swap Excalidraw's re-encoded PNG back to the original GIF bytes so the
+      // saved scene keeps the animation.
+      let persistableFiles = substituteGifFiles(files ?? refs.latestFiles.current ?? {});
       const compressedFilesResult =
         await compressExcalidrawFiles(persistableFiles);
       if (compressedFilesResult.changed) {
